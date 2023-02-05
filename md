@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
-title="# $(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}"
-touch $1.md 
-echo $title >> $1.md
+lower=${1,,}
+touch $lower.md
+echo "# ${lower^}" >> "$lower.md"
+
