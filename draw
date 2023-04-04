@@ -1,0 +1,7 @@
+#!/bin/bash
+
+dotFile="$1"
+pngFile="${1:0:-4}.png"
+savePath=~/"/Pictures/$pngFile"
+
+dot $dotFile -Tpng > $savePath | open $savePath
