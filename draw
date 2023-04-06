@@ -1,7 +1,14 @@
 #!/bin/bash
 
-dotFile="$1"
-pngFile="${1:0:-4}.png"
+set -e
+
+if [ -z ${1} ];
+    then
+        pngFile="tmp_chart.png"
+    else
+        pngFile="${1:0:-4}.png"
+fi
+
 savePath=~/"/Pictures/$pngFile"
 
-dot $dotFile -Tpng > $savePath | open $savePath
+dot $1 -Tpng > $savePath | open $savePath
