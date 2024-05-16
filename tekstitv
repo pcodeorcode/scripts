@@ -1,0 +1,120 @@
+#!/bin/bash
+
+page=100
+subpage=1
+max_page=999
+min_page=100
+max_subpage=30
+min_subpage=1
+html_root="https://yle.fi/tekstitv/txt"
+tmp_file_folder="/tmp/tekstitv"
+interactive_mode=false
+
+_help() {
+   echo "Usage: $(basename $0) [OPTION]"
+   echo "If no arguments given goes in to interactive mode"
+   echo "Options:"
+   echo "   -h, display help"
+   echo "   -p, page number"
+   echo "   -s, subpage number"
+   echo "   -i, interactive mode"
+}
+
+while getopts "p:s:ih" opt; do
+    case $opt in
+        h) # Help
+             _help
+             exit
+             ;;
+        p) # Page
+             page=$OPTARG 
+             ;;
+        s) # Subpage
+             subpage=$OPTARG 
+             ;;
+        i) # Interactive
+             interactive_mode=true 
+             ;;
+    esac
+done
+
+display_page() {
+    curl -s $url --output $tmp_file_folder/tmp.htm
+    pandoc $tmp_file_folder/tmp.htm --from html --to plain --output $tmp_file_folder/tmp.txt
+    sed 1,5d $tmp_file_folder/tmp.txt | head -n +28
+    echo "Current page $page / $subpage"
+}
+
+interactive(){
+    read -p "Enter page [subpage]: " next_page next_subpage
+    if [[ -z $next_page ]]
+        then
+            next_page=100
+    fi
+    if [[ -z $next_subpage ]]
+        then
+            next_subpage=1
+    fi
+    clear
+    exec $0 -p $next_page -s $next_subpage -i
+    echo "next page = $next_page"
+    echo "next subpage = $next_subpage"
+}
+
+error_handler(){
+    local reason=$1
+
+    case $reason in
+        "invalid_page")
+            echo "Invalid page $page/$subpage"
+            echo "Page must be between $min_page-$max_page/$min_subpage-$max_subpage"
+            if [[ $interactive_mode == true ]]
+                then
+                    interactive
+                else
+                    exit 2
+            fi
+    esac
+}
+
+validate_page(){
+    local p=$1
+    local min=$2
+    local max=$3
+
+    # Only numbers allowed
+    if ! [[ $p =~ ^[0-9]+$ ]]
+        then
+            error_handler "invalid_page"
+    fi
+    # Check if between min/max
+    if (( $p > $max || $p < $min ))
+        then
+            error_handler "invalid_page"
+    fi
+}
+
+validate_page "$page" "$min_page" "$max_page"
+validate_page "$subpage" "$min_subpage" "$max_subpage"
+
+# Parse url
+if (( ${#subpage} == 1 ))
+    then
+        url=${html_root}/${page}_000${subpage}.htm
+elif (( ${#subpage} == 2 ))
+    then
+        url=${html_root}/${page}_00${subpage}.htm
+fi
+
+display_page
+
+if (( ${#@} == 0 ))
+    then
+        interactive
+fi
+
+if [[ $interactive_mode == true ]]
+    then
+        interactive
+fi
+
